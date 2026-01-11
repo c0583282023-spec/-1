@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>לימוד צלילים בעברית - 50 מילים</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Assistant', sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #e2ebf0 100%);
+            min-height: 100vh;
+        }
+        .correct {
+            background-color: #4ade80 !important;
+            color: white !important;
+            border-color: #22c55e !important;
+            transform: scale(1.1);
+        }
+        .wrong {
+            background-color: #f87171 !important;
+            color: white !important;
+            border-color: #ef4444 !important;
+        }
+        .shake {
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .card-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-blue-700 mb-2">משחק צלילים בעברית 🎨</h1>
+            <p class="text-lg text-gray-600">לחצי על תמונה כדי לשמוע את המילה, ובחרי את האות הפותחת!</p>
+            <div class="flex justify-center gap-8 mt-4">
+                <div id="score-display" class="text-2xl font-bold text-blue-600">ניקוד: 0</div>
+                <div id="progress-display" class="text-2xl font-bold text-emerald-600">הצלחות: 0/50</div>
+            </div>
+        </header>
+
+        <div id="game-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <!-- כרטיסי המשחק ייווצרו כאן -->
+        </div>
+
+        <!-- מודל הצלחה -->
+        <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-4 transform transition-all">
+                <div id="modal-emoji" class="text-7xl mb-4">⭐</div>
+                <h2 class="text-2xl font-bold text-blue-700 mb-2" id="modal-title">נכון מאוד!</h2>
+                <p class="text-gray-600 mb-6 text-xl" id="modal-text"></p>
+                <button onclick="closeModal()" class="bg-blue-600 text-white px-10 py-3 rounded-full font-bold text-lg hover:bg-blue-700 shadow-lg transition">המשך</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameItems = [
+            { word: 'אריה', letter: 'א', emoji: '🦁' }, { word: 'בית', letter: 'ב', emoji: '🏠' },
+            { word: 'גמל', letter: 'ג', emoji: '🐪' }, { word: 'דג', letter: 'ד', emoji: '🐟' },
+            { word: 'הגה', letter: 'ה', emoji: '🎡' }, { word: 'ורד', letter: 'ו', emoji: '🌹' },
+            { word: 'זברה', letter: 'ז', emoji: '🦓' }, { word: 'חתול', letter: 'ח', emoji: '🐱' },
+            { word: 'טלפון', letter: 'ט', emoji: '☎️' }, { word: 'יד', letter: 'י', emoji: '✋' },
+            { word: 'כלב', letter: 'כ', emoji: '🐶' }, { word: 'לימון', letter: 'ל', emoji: '🍋' },
+            { word: 'מטוס', letter: 'מ', emoji: '✈️' }, { word: 'נחש', letter: 'נ', emoji: '🐍' },
+            { word: 'סוס', letter: 'ס', emoji: '🐎' }, { word: 'עין', letter: 'ע', emoji: '👁️' },
+            { word: 'פיל', letter: 'פ', emoji: '🐘' }, { word: 'צב', letter: 'צ', emoji: '🐢' },
+            { word: 'קוף', letter: 'ק', emoji: '🐒' }, { word: 'רכבת', letter: 'ר', emoji: '🚂' },
+            { word: 'שמש', letter: 'ש', emoji: '☀️' }, { word: 'תפוח', letter: 'ת', emoji: '🍎' },
+            { word: 'ארנב', letter: 'א', emoji: '🐰' }, { word: 'בלון', letter: 'ב', emoji: '🎈' },
+            { word: 'גלידה', letter: 'ג', emoji: '🍦' }, { word: 'דוב', letter: 'ד', emoji: '🐻' },
+            { word: 'הר', letter: 'ה', emoji: '⛰️' }, { word: 'וילון', letter: 'ו', emoji: '🖼️' },
+            { word: 'זית', letter: 'ז', emoji: '🫒' }, { word: 'חלון', letter: 'ח', emoji: '🪟' },
+            { word: 'טבעת', letter: 'ט', emoji: '💍' }, { word: 'ילקוט', letter: 'י', emoji: '🎒' },
+            { word: 'כסא', letter: 'כ', emoji: '🪑' }, { word: 'לחם', letter: 'ל', emoji: '🍞' },
+            { word: 'מפתח', letter: 'מ', emoji: '🔑' }, { word: 'נר', letter: 'נ', emoji: '🕯️' },
+            { word: 'סכין', letter: 'ס', emoji: '🔪' }, { word: 'ענן', letter: 'ע', emoji: '☁️' },
+            { word: 'פרח', letter: 'פ', emoji: '🌸' }, { word: 'ציפור', letter: 'צ', emoji: '🐦' },
+            { word: 'קשת', letter: 'ק', emoji: '🌈' }, { word: 'רימון', letter: 'ר', emoji: '🍎' },
+            { word: 'שעון', letter: 'ש', emoji: '⌚' }, { word: 'תפוז', letter: 'ת', emoji: '🍊' },
+            { word: 'אפרסק', letter: 'א', emoji: '🍑' }, { word: 'בננה', letter: 'ב', emoji: '🍌' },
+            { word: 'גזר', letter: 'ג', emoji: '🥕' }, { word: 'דלת', letter: 'ד', emoji: '🚪' },
+            { word: 'מטריה', letter: 'מ', emoji: '☂️' }, { word: 'ענבים', letter: 'ע', emoji: '🍇' }
+        ];
+
+        const alphabet = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ', 'ק', 'ר', 'ש', 'ת'];
+
+        let score = 0;
+        let completed = 0;
+        const grid = document.getElementById('game-grid');
+        const scoreDisplay = document.getElementById('score-display');
+        const progressDisplay = document.getElementById('progress-display');
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'he-IL';
+            utterance.rate = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function getOptions(correctLetter) {
+            let options = [correctLetter];
+            while(options.length < 3) {
+                let randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+                if(!options.includes(randomLetter)) {
+                    options.push(randomLetter);
+                }
+            }
+            return options.sort(() => Math.random() - 0.5);
+        }
+
+        function createCard(item, index) {
+            const options = getOptions(item.letter);
+            const card = document.createElement('div');
+            card.className = "card-item bg-white rounded-2xl p-4 shadow-md border-b-4 border-blue-100 flex flex-col items-center hover:shadow-lg";
+            card.id = `card-${index}`;
+
+            const emojiDiv = document.createElement('div');
+            emojiDiv.className = "text-5xl cursor-pointer hover:scale-110 transition-transform mb-4 select-none";
+            emojiDiv.innerText = item.emoji;
+            emojiDiv.onclick = () => speak(item.word);
+
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = "flex gap-2 w-full justify-center";
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-10 h-10 rounded-full border-2 border-blue-400 font-bold text-blue-800 hover:bg-blue-50 transition-all text-lg";
+                btn.innerText = opt;
+                btn.onclick = () => handleChoice(btn, opt, item.letter, item.word, index);
+                optionsContainer.appendChild(btn);
+            });
+
+            card.appendChild(emojiDiv);
+            card.appendChild(optionsContainer);
+            return card;
+        }
+
+        function handleChoice(button, selected, correct, word, index) {
+            if (selected === correct) {
+                button.classList.add('correct');
+                score += 10;
+                completed++;
+                scoreDisplay.innerText = `ניקוד: ${score}`;
+                progressDisplay.innerText = `הצלחות: ${completed}/50`;
+                speak(word);
+                
+                const card = document.getElementById(`card-${index}`);
+                const buttons = card.querySelectorAll('button');
+                buttons.forEach(b => b.disabled = true);
+                
+                showModal(`מצוין! ${word} מתחיל ב-${correct}`, "✅");
+            } else {
+                button.classList.add('wrong');
+                button.classList.add('shake');
+                setTimeout(() => button.classList.remove('shake'), 500);
+                score = Math.max(0, score - 2);
+                scoreDisplay.innerText = `ניקוד: ${score}`;
+            }
+        }
+
+        function showModal(text, emoji) {
+            document.getElementById('modal-text').innerText = text;
+            document.getElementById('modal-emoji').innerText = emoji;
+            document.getElementById('success-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+        }
+
+        // ערבוב המילים בכל פעם שהדף נטען
+        const shuffledItems = gameItems.sort(() => Math.random() - 0.5);
+
+        shuffledItems.forEach((item, index) => {
+            grid.appendChild(createCard(item, index));
+        });
+    </script>
+</body>
+</html>
